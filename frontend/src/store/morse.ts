@@ -28,6 +28,7 @@ export const useMorseStore = defineStore('morse', () => {
 
   const DAILY_TASK_COUNT = 10
   const STORAGE_KEY_DAILY = 'morse_daily_challenge'
+  const STORAGE_KEY_DAILY_PROGRESS = 'morse_daily_progress'
 
   const dotDuration = computed(() => 1200 / wpm.value)
 
@@ -152,6 +153,40 @@ export const useMorseStore = defineStore('morse', () => {
     }
   }
 
+  function saveDailyProgress() {
+    try {
+      localStorage.setItem(STORAGE_KEY_DAILY_PROGRESS, JSON.stringify({
+        date: getTodayString(),
+        tasks: dailyTasks.value,
+        currentIndex: dailyCurrentIndex.value,
+        completed: dailyCompleted.value
+      }))
+    } catch (e) {
+      console.error('Failed to save daily progress')
+    }
+  }
+
+  function loadDailyProgress(): { date: string; tasks: DailyChallengeTask[]; currentIndex: number; completed: boolean } | null {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY_DAILY_PROGRESS)
+      if (stored) {
+        const data = JSON.parse(stored)
+        if (data.date === getTodayString()) {
+          return data
+        }
+      }
+    } catch (e) {
+    }
+    return null
+  }
+
+  function clearDailyProgress() {
+    try {
+      localStorage.removeItem(STORAGE_KEY_DAILY_PROGRESS)
+    } catch (e) {
+    }
+  }
+
   function calculateStreak(todayStr: string): number {
     const records = dailyRecords.value.filter(r => r.completed)
     if (records.length === 0) return 0
@@ -180,10 +215,24 @@ export const useMorseStore = defineStore('morse', () => {
   function initDailyChallenge() {
     loadDailyRecords()
     const todayStr = getTodayString()
-    const todayRecord = dailyRecords.value.find(r => r.date === todayStr)
 
-    if (todayRecord && todayRecord.completed) {
+    const saved = loadDailyProgress()
+    if (saved) {
+      dailyTasks.value = saved.tasks
+      dailyCurrentIndex.value = saved.currentIndex
+      dailyCompleted.value = saved.completed
+    } else if (dailyRecords.value.some(r => r.date === todayStr && r.completed)) {
       dailyTasks.value = generateDailyTasks(todayStr)
+      const record = dailyRecords.value.find(r => r.date === todayStr)!
+      dailyTasks.value.forEach((t, i) => {
+        if (i < record.correctCount) {
+          t.correct = true
+          t.userAnswer = t.code
+        } else {
+          t.correct = false
+          t.userAnswer = ''
+        }
+      })
       dailyCompleted.value = true
       dailyCurrentIndex.value = DAILY_TASK_COUNT
     } else {
@@ -207,6 +256,7 @@ export const useMorseStore = defineStore('morse', () => {
     if (dailyCurrentIndex.value < dailyTasks.value.length - 1) {
       dailyCurrentIndex.value++
       dailyUserAnswer.value = ''
+      saveDailyProgress()
     } else {
       completeDailyChallenge()
     }
@@ -240,6 +290,7 @@ export const useMorseStore = defineStore('morse', () => {
     }
 
     saveDailyRecords()
+    saveDailyProgress()
   }
 
   function resetDailyChallenge() {
@@ -254,6 +305,7 @@ export const useMorseStore = defineStore('morse', () => {
     dailyRecords.value = dailyRecords.value.filter(r => r.date !== todayStr)
     dailyStreak.value = calculateStreak(todayStr)
     saveDailyRecords()
+    clearDailyProgress()
   }
 
   function playCurrentDailyTask() {

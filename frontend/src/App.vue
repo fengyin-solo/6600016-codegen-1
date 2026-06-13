@@ -12,7 +12,7 @@
     </div>
 
     <!-- Encode/Decode Mode -->
-    <div v-if="activeTab === 'translate'" class="flex flex-col gap-4">
+    <div v-show="activeTab === 'translate'" class="flex flex-col gap-4">
       <div class="grid grid-cols-2 gap-4">
         <div class="bg-gray-900 rounded-xl p-4">
           <h3 class="text-amber-300 font-bold mb-2">文本输入</h3>
@@ -38,17 +38,17 @@
     </div>
 
     <!-- Training Mode -->
-    <div v-if="activeTab === 'train'" class="flex flex-col gap-4">
+    <div v-show="activeTab === 'train'" class="flex flex-col gap-4">
       <TrainingMode />
     </div>
 
     <!-- Daily Challenge -->
-    <div v-if="activeTab === 'daily'" class="flex flex-col gap-4">
+    <div v-show="activeTab === 'daily'" class="flex flex-col gap-4">
       <DailyChallenge />
     </div>
 
     <!-- Reference Table -->
-    <div v-if="activeTab === 'ref'" class="bg-gray-900 rounded-xl p-4">
+    <div v-show="activeTab === 'ref'" class="bg-gray-900 rounded-xl p-4">
       <h3 class="text-amber-300 font-bold mb-3">莫尔斯码速查表</h3>
       <div class="grid grid-cols-4 md:grid-cols-6 gap-2">
         <div v-for="(code, char) in morseTable" :key="char"
